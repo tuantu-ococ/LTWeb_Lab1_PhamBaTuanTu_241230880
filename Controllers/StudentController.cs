@@ -53,28 +53,39 @@ namespace Lab1.Controllers
         [HttpPost("Admin/Student/Add")]
         public async Task<IActionResult> Create(Student s, IFormFile? avatar)
         {
-            s.Id = listStudents.Last<Student>().Id + 1;
-
-            if (avatar != null && avatar.Length > 0)
+            if (ModelState.IsValid)
             {
-                // Thư mục lưu ảnh: wwwroot/images
-                string folder = Path.Combine(_env.WebRootPath, "images");
-                Directory.CreateDirectory(folder);
+                s.Id = listStudents.Last<Student>().Id + 1;
 
-                // Đặt tên file mới để không bị trùng
-                string fileName = Guid.NewGuid() + Path.GetExtension(avatar.FileName);
-                string filePath = Path.Combine(folder, fileName);
-
-                using (var stream = new FileStream(filePath, FileMode.Create))
+                if (avatar != null && avatar.Length > 0)
                 {
-                    await avatar.CopyToAsync(stream);
+                    string folder = Path.Combine(_env.WebRootPath, "images");
+                    Directory.CreateDirectory(folder);
+
+                    string fileName = Guid.NewGuid() + Path.GetExtension(avatar.FileName);
+                    string filePath = Path.Combine(folder, fileName);
+
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await avatar.CopyToAsync(stream);
+                    }
+
+                    s.ImagePath = "/images/" + fileName;
                 }
 
-                s.ImagePath = "/images/" + fileName;
+                listStudents.Add(s);
+                return View("Index", listStudents);
             }
 
-            listStudents.Add(s);
-            return View("Index", listStudents);
+            ViewBag.AllGenders = Enum.GetValues(typeof(Gender)).Cast<Gender>().ToList();
+            ViewBag.AllBranches = new List<SelectListItem>()
+            {
+                new SelectListItem { Text = "IT", Value = "1" },
+                new SelectListItem { Text = "BE", Value = "2" },
+                new SelectListItem { Text = "CE", Value = "3" },
+                new SelectListItem { Text = "EE", Value = "4" }
+            };
+            return View();
         }
     }
 }
